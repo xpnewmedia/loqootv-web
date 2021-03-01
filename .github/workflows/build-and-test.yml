@@ -1,11 +1,11 @@
 # Runs build and test
-name: CI
+name: Production CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main,master ]
   pull_request:
-    branches: [ main ]
+    branches: [ main,master ]
 
 jobs:
   build:
@@ -14,7 +14,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [10.x, 12.x, 14.x]
+        node-version: [14.x]
 
     steps:
     - uses: actions/checkout@v2
@@ -22,5 +22,24 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
+    - run: npm audit fix
     - run: npm install
     - run: npm run build
+    # Deploy to Netlify with a personalized message
+    - name: 🚀 Deploy to Netlify
+      id: deploy-netlify
+      uses: netlify/actions/cli@master
+      env:
+        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      with:
+        args: deploy --dir=_site --prod
+#     # Publish the inspect and preview link to the PR
+#     - name: 👓 Netlify Preview URL
+#       uses: unsplash/comment-on-pr@master
+#       env:
+#         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+#         OUTPUT: "This pull request is being automatically deployed to Netlify.\n\n🔍 Inspect: ${{ steps.deploy-netlify.outputs.NETLIFY_LOGS_URL }}\n✅ Preview: ${{ steps.deploy-netlify.outputs.NETLIFY_URL }}"
+#       with:
+#         msg: ${{ env.OUTPUT }}
+#         check_for_duplicate_msg: false
